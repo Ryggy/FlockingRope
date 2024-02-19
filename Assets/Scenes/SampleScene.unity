@@ -225,6 +225,7 @@ GameObject:
   m_Component:
   - component: {fileID: 731563649}
   - component: {fileID: 731563648}
+  - component: {fileID: 731563650}
   m_Layer: 0
   m_Name: RopeManager
   m_TagString: Untagged
@@ -239,7 +240,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 731563647}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 09d9c1405e0aedb4dab4c129de3b45bf, type: 3}
   m_Name: 
@@ -250,6 +251,7 @@ MonoBehaviour:
   fixEndPoints: 1
   minDistanceConstraint: 0.75
   maxDistanceConstraint: 1.25
+  itterationCount: 10
 --- !u!4 &731563649
 Transform:
   m_ObjectHideFlags: 0
@@ -259,12 +261,30 @@ Transform:
   m_GameObject: {fileID: 731563647}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.93, y: 0, z: 0}
+  m_LocalPosition: {x: -0.21, y: 3.32, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &731563650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 731563647}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e377c605644f46b428f3db84ed08fd55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gravity: 9.8
+  solveIterations: 5
+  constrainStickMinLength: 1
+  numNodes: 20
+  segmentLength: 0.3
+  startPos: {x: 0, y: 4}
 --- !u!1 &1885375575
 GameObject:
   m_ObjectHideFlags: 0

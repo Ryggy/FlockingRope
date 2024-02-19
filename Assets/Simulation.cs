@@ -11,8 +11,11 @@ public class Simulation : MonoBehaviour
     protected List<Stick> sticks;
     int[] order;
 
+    // Number of nodes in the chain
+    public int numNodes = 5;
+    public float segmentLength = 1f;
+    public Vector2 startPos = new Vector2(0 ,0);
     private LineRenderer lineRenderer;
-    public GameObject circlePrefab; // Prefab for the circle
 
     private bool isDragging = false;
     private Point selectedNode;
@@ -43,12 +46,9 @@ public class Simulation : MonoBehaviour
 
     private void CreateRope()
     {
-        // Number of nodes in the chain
-        int numNodes = 5;
-
         for (int i = 0; i < numNodes; i++)
         {
-            Point newNode = new Point { position = new Vector2(0, -i) }; // Adjust position as needed
+            Point newNode = new Point { position = new Vector2(0, -i*segmentLength) + startPos}; // Adjust position as needed
             newNode.prevPosition = newNode.position; // Initialize prevPosition to match position
             points.Add(newNode);
 
@@ -58,9 +58,6 @@ public class Simulation : MonoBehaviour
                 Stick ropeStick = new Stick(points[i - 1], newNode);
                 sticks.Add(ropeStick);
             }
-
-            // Spawn a circle on each point
-            //SpawnCircle(newNode.position);
         }
 
         // Fix the first node
@@ -119,6 +116,7 @@ public class Simulation : MonoBehaviour
                 p.position += p.position - p.prevPosition;
                 p.position += Vector2.down * gravity * Time.deltaTime * Time.deltaTime;
                 p.prevPosition = positionBeforeUpdate;
+
             }
         }
 
@@ -202,18 +200,13 @@ public class Simulation : MonoBehaviour
             lineRenderer.SetPosition(i, points[i].position);
         }
     }
-
-    private void SpawnCircle(Vector2 position)
-    {
-        // Instantiate the circle prefab at the specified position
-        Instantiate(circlePrefab, position, Quaternion.identity);
-    }
 }
 
 public class Point
 {
     public Vector2 position, prevPosition;
     public bool locked;
+    public float mass = 1f;
 }
 
 public class Stick
