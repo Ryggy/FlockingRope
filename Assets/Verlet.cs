@@ -25,18 +25,20 @@ public struct VerletState
 public class Verlet : MonoBehaviour
 {
     public VerletState state = new VerletState();
+    public Vector2 pos;
 
     public void Start()
     {
         state.pos = transform.position;
         state.prevPos = state.pos;
         state.force = Vector2.zero;
+        pos = state.pos;
     }
 
     void FixedUpdate()
     {
         // Physics update for Verlet integration
-        state.integrate();
+        //state.integrate();
 
         // Update gameobject position using the state data
         transform.position = state.pos;

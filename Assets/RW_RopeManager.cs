@@ -17,6 +17,8 @@ public class RW_RopeManager : MonoBehaviour
     public float minDistanceConstraint = 0.8f; // Minimum distance constraint
     public float maxDistanceConstraint = 1.2f; // Maximum distance constraint
 
+    public int itterationCount = 10;
+
     private void Start()
     {
         SpawnRope();
@@ -131,10 +133,13 @@ public class RW_RopeManager : MonoBehaviour
                 node.state.pos.y = -3.5f;
             }
         }
+        for (int i = 0; i < itterationCount; i++)
+        {
+            // Satisfy all constraints
+            ConstraintLengthMin(nodes, constraints, minDistanceConstraint);
+            ConstraintLengthMax(nodes, constraints, maxDistanceConstraint);
+        }
 
-        // Satisfy all constraints
-        ConstraintLengthMin(nodes, constraints, minDistanceConstraint);
-        ConstraintLengthMax(nodes, constraints, maxDistanceConstraint);
         //SatisfyConstraints(constraints);
     }
 
