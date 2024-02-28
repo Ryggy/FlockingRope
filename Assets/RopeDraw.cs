@@ -3,37 +3,50 @@ using UnityEngine;
 
 public class RopeDraw : MonoBehaviour
 {
-    private int rows = 32;
-    private int columns = 32;
-    private float spacing = 0.5f;
+    public int rows = 32;
+    public int columns = 32;
+    public float spacing = 0.5f;
     public Material material;
 
-    public List<GameObject> spheres;
-    public List<Particle> particles;
-    public List<Connector> connectors;
+    private List<GameObject> spheres;
+    private List<Particle> particles;
+    private List<Connector> connectors;
 
     public GameObject sphereContainer;
     public GameObject lineContainer;
 
+    private Vector2 startPos;
+    private Vector2 endPos;
     private Vector2 dragStartPos;
     private Vector2 dragEndPos;
-    private bool isDragging = false;
+    public bool isDragging = false;
 
     public bool simulating = false;
 
     // Initalize
     void Start()
     {
-        InitializeRope();
+        startPos = new Vector2(0, 0);
+        endPos = new Vector2(rows, -columns);
+        InitializeRope(startPos, endPos);
     }
 
-    private void InitializeRope()
+    private void InitializeRope(Vector2 start, Vector2 end)
     {
-        Vector2 spawnParticlePos = new Vector2(0, 0);
+        Vector2 spawnParticlePos = start;
 
         spheres = new List<GameObject>();
         particles = new List<Particle>();
         connectors = new List<Connector>();
+
+        // Calculate rows and columns based on the difference between start and end positions
+        int newRows = Mathf.RoundToInt(Mathf.Abs((end.y - start.y)) / spacing);
+        int newCols = Mathf.RoundToInt(Mathf.Abs((end.x - start.x)) / spacing);
+
+        Vector2 direction = (end - start).normalized;
+
+        rows = newRows;
+        columns = newCols;
 
         for (int y = 0; y <= rows; y++)
         {
@@ -44,13 +57,13 @@ public class RopeDraw : MonoBehaviour
                 var mat = sphere.GetComponent<Renderer>();
                 sphere.transform.parent = sphereContainer.transform;
                 mat.material = material;
-                sphere.transform.position = new Vector2(spawnParticlePos.y, spawnParticlePos.x);
+                sphere.transform.position = new Vector2(spawnParticlePos.x, spawnParticlePos.y);
                 sphere.transform.localScale = new Vector2(0.2f, 0.2f);
 
                 // Create particle
                 Particle point = new Particle();
 
-                point.pinnedPos = new Vector2(spawnParticlePos.y, spawnParticlePos.x);
+                point.pinnedPos = new Vector2(spawnParticlePos.x, spawnParticlePos.y);
 
                 // Create a vertical connector 
                 if (x != 0)
@@ -94,22 +107,35 @@ public class RopeDraw : MonoBehaviour
                 }
 
                 // Pin the points in the top row of the grid
-                if (x == 0)
+                if (y == 0)
                 {
                     point.pinned = true;
                 }
-
-                spawnParticlePos.x -= spacing;
 
                 // Add particle and spehere to lists
                 spheres.Add(sphere);
                 particles.Add(point);
 
-
+                if (direction.x >= 0)
+                {
+                    spawnParticlePos.x += spacing;
+                }
+                else
+                {
+                    spawnParticlePos.x -= spacing;
+                }
             }
 
-            spawnParticlePos.x = 0;
-            spawnParticlePos.y -= spacing;
+            spawnParticlePos.x = start.x;
+
+            if (direction.y > 0)
+            {
+                spawnParticlePos.y += spacing;
+            }
+            else
+            {
+                spawnParticlePos.y -= spacing;
+            }
         }
     }
 
@@ -125,7 +151,8 @@ public class RopeDraw : MonoBehaviour
         if (isDragging && Input.GetMouseButton(0))
         {
             dragEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            SpawnGridPoints();
+            ClearRope();
+            InitializeRope(dragStartPos, dragEndPos);
         }
 
         if (Input.GetMouseButtonUp(0))
@@ -144,29 +171,16 @@ public class RopeDraw : MonoBehaviour
                 float dist = Vector3.Distance(mousePos_new, connectors[i].point0.pos);
                 if (dist <= 1.05f)
                 {
-                    Debug.Log("removed connector");
+                    //Debug.Log("removed connector");
                     connectors[i].enabled = false;
                 }
             }
         }
 
-        if(Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
             simulating = !simulating;
         }
-    }
-
-    private void SpawnGridPoints()
-    {
-        ClearRope();
-
-        int newRows = Mathf.RoundToInt(Mathf.Abs((dragEndPos - dragStartPos).y) / spacing);
-        int newCols = Mathf.RoundToInt(Mathf.Abs((dragEndPos - dragStartPos).x) / spacing);
-
-        rows = newRows;
-        columns = newCols;
-
-        InitializeRope();
     }
 
     private void ClearRope()
@@ -212,7 +226,7 @@ public class RopeDraw : MonoBehaviour
     private void ConstraintPoints()
     {
         // Constraint the points together
-        var startDistance = 0.5f;
+        float constraintLength = 0.5f;
         for (int i = 0; i < connectors.Count; i++)
         {
             if (connectors[i].enabled == false)
@@ -223,13 +237,13 @@ public class RopeDraw : MonoBehaviour
             else
             {
                 float dist = (connectors[i].point0.pos - connectors[i].point1.pos).magnitude;
-                float error = Mathf.Abs(dist - startDistance);
+                float error = Mathf.Abs(dist - constraintLength);
 
-                if (dist > startDistance)
+                if (dist > constraintLength)
                 {
                     connectors[i].changeDir = (connectors[i].point0.pos - connectors[i].point1.pos).normalized;
                 }
-                else if (dist < startDistance)
+                else if (dist < constraintLength)
                 {
                     connectors[i].changeDir = (connectors[i].point1.pos - connectors[i].point0.pos).normalized;
                 }
