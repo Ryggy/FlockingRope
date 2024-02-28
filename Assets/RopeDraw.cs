@@ -3,14 +3,14 @@ using UnityEngine;
 
 public class RopeDraw : MonoBehaviour
 {
-    public int rows = 32;
-    public int columns = 32;
+    private int rows = 16;
+    private int columns = 16;
     public float spacing = 0.5f;
     public Material material;
 
-    private List<GameObject> spheres;
-    private List<Particle> particles;
-    private List<Connector> connectors;
+    private List<GameObject> spheres = new List<GameObject>();
+    private List<Particle> particles = new List<Particle>();
+    private List<Connector> connectors = new List<Connector>();
 
     public GameObject sphereContainer;
     public GameObject lineContainer;
@@ -19,7 +19,8 @@ public class RopeDraw : MonoBehaviour
     private Vector2 endPos;
     private Vector2 dragStartPos;
     private Vector2 dragEndPos;
-    public bool isDragging = false;
+    private bool isDragging = false;
+    private GameObject dragVisualization; // Added for visualization
 
     public bool simulating = false;
 
@@ -34,10 +35,6 @@ public class RopeDraw : MonoBehaviour
     private void InitializeRope(Vector2 start, Vector2 end)
     {
         Vector2 spawnParticlePos = start;
-
-        spheres = new List<GameObject>();
-        particles = new List<Particle>();
-        connectors = new List<Connector>();
 
         // Calculate rows and columns based on the difference between start and end positions
         int newRows = Mathf.RoundToInt(Mathf.Abs((end.y - start.y)) / spacing);
@@ -92,10 +89,10 @@ public class RopeDraw : MonoBehaviour
                     line.transform.parent = lineContainer.transform;
                     Connector connector = new Connector();
                     connector.p0 = sphere;
-                    connector.p1 = spheres[(y - 1) * (rows + 1) + x];
+                    connector.p1 = spheres[(y - 1) * (columns + 1) + x];
 
                     connector.point0 = point;
-                    connector.point1 = particles[(y - 1) * (rows + 1) + x];
+                    connector.point1 = particles[(y - 1) * (columns + 1) + x];
                     connector.point0.pos = sphere.transform.position;
                     connector.point0.oldPos = sphere.transform.position;
 
@@ -146,17 +143,21 @@ public class RopeDraw : MonoBehaviour
         {
             isDragging = true;
             dragStartPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            ClearRope();
         }
 
         if (isDragging && Input.GetMouseButton(0))
         {
             dragEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            ClearRope();
-            InitializeRope(dragStartPos, dragEndPos);
+
+            // Update drag visualization
+            UpdateDragVisualization();
         }
 
         if (Input.GetMouseButtonUp(0))
         {
+            ClearRope();
+            InitializeRope(dragStartPos, dragEndPos);
             isDragging = false;
         }
 
@@ -183,6 +184,35 @@ public class RopeDraw : MonoBehaviour
         }
     }
 
+    private void UpdateDragVisualization()
+    {
+        // Destroy previous visualization if it exists
+        if (dragVisualization != null)
+            Destroy(dragVisualization);
+
+        // Calculate width and height of dragged section
+        float width = Mathf.Abs(dragEndPos.x - dragStartPos.x);
+        float height = Mathf.Abs(dragEndPos.y - dragStartPos.y);
+
+        // Calculate position of center of dragged section
+        Vector2 center = (dragStartPos + dragEndPos) / 2f;
+
+        // Create square visualization
+        dragVisualization = new GameObject("DragVisualization");
+        dragVisualization.transform.position = new Vector3(center.x, center.y, 0f);
+        for (float x = -width / 2f; x <= width / 2f; x += spacing)
+        {
+            for (float y = -height / 2f; y <= height / 2f; y += spacing)
+            {
+                GameObject point = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                point.transform.parent = dragVisualization.transform;
+                point.transform.localPosition = new Vector3(x, y, 0f);
+                point.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                point.GetComponent<Renderer>().material.color = Color.white;
+            }
+        }
+    }
+
     private void ClearRope()
     {
         foreach (GameObject sphere in spheres)
@@ -195,6 +225,11 @@ public class RopeDraw : MonoBehaviour
         for (int i = 0; i < childs; i++)
         {
             Destroy(lineContainer.transform.GetChild(i).gameObject);
+        }
+
+        if (dragVisualization != null)
+        {
+            Destroy(dragVisualization);
         }
 
         spheres.Clear();
@@ -227,6 +262,9 @@ public class RopeDraw : MonoBehaviour
     {
         // Constraint the points together
         float constraintLength = 0.5f;
+        float constraintMinModifier = 1f;
+        float constraintMaxModifier = 1.1f;
+
         for (int i = 0; i < connectors.Count; i++)
         {
             if (connectors[i].enabled == false)

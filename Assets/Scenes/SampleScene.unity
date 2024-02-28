@@ -546,14 +546,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4aa45ab5b34ce9c4b8c8e65e44c9e77c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rows: 16
-  columns: 16
   spacing: 0.5
   material: {fileID: 2100000, guid: 0f92e85c2f33a5b41bf7c429d95ea040, type: 2}
-  spheres: []
   sphereContainer: {fileID: 97259545}
   lineContainer: {fileID: 1954762530}
-  isDragging: 0
   simulating: 0
 --- !u!4 &1959460365
 Transform:
