@@ -8,12 +8,26 @@ public class RopeDraw : MonoBehaviour
     private float spacing = 0.5f;
     public Material material;
 
-    private List<GameObject> spheres;
-    private List<Particle> particles;
-    private List<Connector> connectors;
+    public List<GameObject> spheres;
+    public List<Particle> particles;
+    public List<Connector> connectors;
+
+    public GameObject sphereContainer;
+    public GameObject lineContainer;
+
+    private Vector2 dragStartPos;
+    private Vector2 dragEndPos;
+    private bool isDragging = false;
+
+    public bool simulating = false;
 
     // Initalize
     void Start()
+    {
+        InitializeRope();
+    }
+
+    private void InitializeRope()
     {
         Vector2 spawnParticlePos = new Vector2(0, 0);
 
@@ -27,21 +41,22 @@ public class RopeDraw : MonoBehaviour
             {
                 // Create a sphere
                 GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-
                 var mat = sphere.GetComponent<Renderer>();
+                sphere.transform.parent = sphereContainer.transform;
                 mat.material = material;
                 sphere.transform.position = new Vector2(spawnParticlePos.y, spawnParticlePos.x);
                 sphere.transform.localScale = new Vector2(0.2f, 0.2f);
 
                 // Create particle
                 Particle point = new Particle();
+
                 point.pinnedPos = new Vector2(spawnParticlePos.y, spawnParticlePos.x);
 
                 // Create a vertical connector 
                 if (x != 0)
                 {
                     LineRenderer line = new GameObject("Line").AddComponent<LineRenderer>();
-
+                    line.transform.parent = lineContainer.transform;
                     Connector connector = new Connector();
                     connector.p0 = sphere;
                     connector.p1 = spheres[spheres.Count - 1];
@@ -61,7 +76,7 @@ public class RopeDraw : MonoBehaviour
                 if (y != 0)
                 {
                     LineRenderer line = new GameObject("Line").AddComponent<LineRenderer>();
-
+                    line.transform.parent = lineContainer.transform;
                     Connector connector = new Connector();
                     connector.p0 = sphere;
                     connector.p1 = spheres[(y - 1) * (rows + 1) + x];
@@ -96,65 +111,85 @@ public class RopeDraw : MonoBehaviour
             spawnParticlePos.x = 0;
             spawnParticlePos.y -= spacing;
         }
-
     }
 
-    public class Connector
-    {
-        public bool enabled = true;
-        public LineRenderer lineRender;
-        public GameObject p0;
-        public GameObject p1;
-        public Particle point0;
-        public Particle point1;
-        public Vector2 changeDir;
-    }
 
-    public class Particle
+    private void HandleInput()
     {
-        public bool pinned = false;
-        public Vector2 pinnedPos;
-        public Vector2 pos;
-        public Vector2 oldPos;
-        public Vector2 vel;
-        public float gravity = -0.24f;
-        public float friction = 0.99f;
-        public float damping = 1f;
-    }
+        if (Input.GetMouseButtonDown(0))
+        {
+            isDragging = true;
+            dragStartPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        }
 
-    void Update()
-    {
+        if (isDragging && Input.GetMouseButton(0))
+        {
+            dragEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            SpawnGridPoints();
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            isDragging = false;
+        }
+
         // Handle mouse input
         Vector3 mousePos = Input.mousePosition;
         Vector3 mousePos_new = Camera.main.ScreenToWorldPoint(mousePos);
         mousePos_new.z = 0f;
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButton(1))
         {
             for (int i = 0; i < connectors.Count; i++)
             {
                 float dist = Vector3.Distance(mousePos_new, connectors[i].point0.pos);
                 if (dist <= 1.05f)
                 {
-                    //Debug.Log("removed connector");
+                    Debug.Log("removed connector");
                     connectors[i].enabled = false;
                 }
             }
         }
 
-        // I should move this to FixedUpdate
-        for (int i = 0; i < connectors.Count; i++)
+        if(Input.GetKeyDown(KeyCode.Space))
         {
-            float dist1 = Vector3.Distance(connectors[i].point0.pos, connectors[i].point1.pos);
-            if (dist1 > 1.4)
-            {
-                connectors[i].enabled = false;
-            }
+            simulating = !simulating;
         }
     }
 
-    private void FixedUpdate()
+    private void SpawnGridPoints()
     {
-        // Update particle positions
+        ClearRope();
+
+        int newRows = Mathf.RoundToInt(Mathf.Abs((dragEndPos - dragStartPos).y) / spacing);
+        int newCols = Mathf.RoundToInt(Mathf.Abs((dragEndPos - dragStartPos).x) / spacing);
+
+        rows = newRows;
+        columns = newCols;
+
+        InitializeRope();
+    }
+
+    private void ClearRope()
+    {
+        foreach (GameObject sphere in spheres)
+        {
+            Destroy(sphere);
+        }
+
+        int childs = lineContainer.transform.childCount;
+
+        for (int i = 0; i < childs; i++)
+        {
+            Destroy(lineContainer.transform.GetChild(i).gameObject);
+        }
+
+        spheres.Clear();
+        particles.Clear();
+        connectors.Clear();
+    }
+
+    private void UpdateParticlePositions()
+    {
         for (int p = 0; p < particles.Count; p++)
         {
             Particle point = particles[p];
@@ -163,7 +198,6 @@ public class RopeDraw : MonoBehaviour
                 point.pos = point.pinnedPos;
                 point.oldPos = point.pinnedPos;
             }
-
             else
             {
                 point.vel = (point.pos - point.oldPos) * point.friction;
@@ -172,10 +206,11 @@ public class RopeDraw : MonoBehaviour
                 point.pos += point.vel;
                 point.pos.y += point.gravity * Time.fixedDeltaTime;
             }
-
-
         }
+    }
 
+    private void ConstraintPoints()
+    {
         // Constraint the points together
         var startDistance = 0.5f;
         for (int i = 0; i < connectors.Count; i++)
@@ -205,38 +240,71 @@ public class RopeDraw : MonoBehaviour
 
             }
         }
+    }
 
-        // Set spheres
+    private void SetSpheresAndLines()
+    {
         for (int p = 0; p < particles.Count; p++)
         {
             Particle point = particles[p];
             spheres[p].transform.position = new Vector2(point.pos.x, point.pos.y);
             spheres[p].transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-
         }
 
-        // Set lines
         for (int i = 0; i < connectors.Count; i++)
         {
             if (connectors[i].enabled == false)
             {
                 Destroy(connectors[i].lineRender);
             }
-
             else
             {
-                // Set points for the lines
                 var points = new Vector3[2];
                 points[0] = connectors[i].p0.transform.position + new Vector3(0, 0, 1);
                 points[1] = connectors[i].p1.transform.position + new Vector3(0, 0, 1);
 
-                // Draw lines
                 connectors[i].lineRender.startWidth = 0.04f;
                 connectors[i].lineRender.endWidth = 0.04f;
                 connectors[i].lineRender.SetPositions(points);
-
             }
-
         }
+    }
+
+    void Update()
+    {
+        HandleInput();
+    }
+
+    private void FixedUpdate()
+    {
+        if (simulating)
+        {
+            UpdateParticlePositions();
+            ConstraintPoints();
+            SetSpheresAndLines();
+        }
+    }
+
+    public class Connector
+    {
+        public bool enabled = true;
+        public LineRenderer lineRender;
+        public GameObject p0;
+        public GameObject p1;
+        public Particle point0;
+        public Particle point1;
+        public Vector2 changeDir;
+    }
+
+    public class Particle
+    {
+        public bool pinned = false;
+        public Vector2 pinnedPos;
+        public Vector2 pos;
+        public Vector2 oldPos;
+        public Vector2 vel;
+        public float gravity = -0.24f;
+        public float friction = 0.99f;
+        public float damping = 1f;
     }
 }
