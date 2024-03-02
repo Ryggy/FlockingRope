@@ -3,11 +3,12 @@ using UnityEngine;
 
 public class RopeDraw : MonoBehaviour
 {
-    private int rows = 16;
-    private int columns = 16;
+    private int rows = 8;
+    private int columns = 8;
     public float spacing = 0.5f;
     public Material material;
-
+    public Material pinnedMaterial;
+    public Camera mainCamera;
     private List<GameObject> spheres = new List<GameObject>();
     private List<Particle> particles = new List<Particle>();
     private List<Connector> connectors = new List<Connector>();
@@ -22,18 +23,40 @@ public class RopeDraw : MonoBehaviour
     private bool isDragging = false;
     private GameObject dragVisualization; // Added for visualization
 
+    public GameObject selectedSphere = null;
+    private bool isDraggingConnection = false;
+
+    public bool isClothSimulation = true; // Toggle between cloth and rope simulation
     public bool simulating = false;
 
-    // Initalize
+   
     void Start()
     {
         startPos = new Vector2(0, 0);
         endPos = new Vector2(rows, -columns);
-        InitializeRope(startPos, endPos);
+        InitialiseSimulation();
     }
 
-    private void InitializeRope(Vector2 start, Vector2 end)
+    private void InitialiseSimulation()
     {
+        ClearSimulation();
+
+        if (isClothSimulation)
+        {
+            InitialiseCloth(startPos, endPos);
+            mainCamera.orthographicSize = 15f;
+        }
+        else
+        {
+            //InitialiseRope(startPos, endPos);
+            mainCamera.orthographicSize = 5f;
+        }
+    }
+
+    private void InitialiseCloth(Vector2 start, Vector2 end)
+    {
+        // Implementation for cloth simulation (spawn a grid of connected points)
+
         Vector2 spawnParticlePos = start;
 
         // Calculate rows and columns based on the difference between start and end positions
@@ -100,13 +123,13 @@ public class RopeDraw : MonoBehaviour
 
                     connector.lineRender = line;
                     connector.lineRender.material = material;
-
                 }
 
                 // Pin the points in the top row of the grid
                 if (y == 0)
                 {
                     point.pinned = true;
+                    mat.material = pinnedMaterial;
                 }
 
                 // Add particle and spehere to lists
@@ -135,36 +158,207 @@ public class RopeDraw : MonoBehaviour
             }
         }
     }
+    
+    private void InitialiseRope(Vector2 start, Vector2 end)
+    {
+        // Implementation for rope simulation (spawn a line of connected points)
 
+        // Calculate the number of points based on the distance between start and end
+        int pointCount = Mathf.RoundToInt(Vector2.Distance(start, end) / spacing);
+
+        Vector2 direction = (end - start).normalized;
+        Vector2 spawnPos = start;
+
+        GameObject previousSphere = null; // storing previous points for optimisation
+        Particle previousParticle = null; // we wont need to check previous index bc we already have a reference
+
+        for (int i = 0; i <= pointCount; i++)
+        {
+            // Create a sphere
+            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Renderer renderer = sphere.GetComponent<Renderer>();
+            sphere.transform.parent = sphereContainer.transform;
+            renderer.material = material;
+            sphere.transform.position = new Vector2(spawnPos.x, spawnPos.y);
+            sphere.transform.localScale = new Vector2(0.2f, 0.2f);
+
+            // Create particle
+            Particle point = new Particle();
+            point.pinnedPos = new Vector2(spawnPos.x, spawnPos.y);
+
+            // Pin the points in the first and last index
+            if (i == 0 || i == pointCount)
+            {
+                point.pinned = true;
+                renderer.material = pinnedMaterial;
+            }
+
+            // Add particle and sphere to lists
+            spheres.Add(sphere);
+            particles.Add(point);
+
+            if (i != 0)
+            {
+                // Create connector between current and previous nodes
+                LineRenderer line = new GameObject("Line").AddComponent<LineRenderer>();
+                line.transform.parent = lineContainer.transform;
+                line.material = material;
+
+                Connector connector = new Connector();
+                connector.p0 = sphere;
+                connector.p1 = previousSphere;
+
+                connector.point0 = point;
+                connector.point1 = previousParticle;
+                connector.point0.pos = sphere.transform.position;
+                connector.point0.oldPos = sphere.transform.position;
+
+                connectors.Add(connector);
+
+                connector.lineRender = line;
+            }
+
+            // Update previous sphere and particle
+            previousSphere = sphere;
+            previousParticle = point;
+
+            // Move spawn position to the next point
+            spawnPos += direction * spacing;
+        }
+    }
+
+    private void CreateRopePoint(Vector2 position, bool isPinned)
+    {
+        // Create a sphere
+        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Renderer renderer = sphere.GetComponent<Renderer>();
+        sphere.transform.parent = sphereContainer.transform;
+        renderer.material = material;
+        sphere.transform.position = position;
+        sphere.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+        sphere.tag = "RopePoint";
+
+        // Create particle
+        Particle point = new Particle();
+        point.pinnedPos = position;
+
+        // Set pinned state
+        point.pinned = isPinned;
+        if (isPinned) renderer.material = pinnedMaterial;
+
+        // Add particle and sphere to lists
+        spheres.Add(sphere);
+        particles.Add(point);
+    }
+
+    private GameObject GetNearestRopePoint(Vector2 position, float radius)
+    {
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(position, radius);
+        foreach (Collider2D collider in colliders)
+        {
+            if (collider.CompareTag("RopePoint"))
+            {
+                return collider.gameObject;
+            }
+        }
+        return null;
+    }
+
+    private void CreateConnection(GameObject sphere1, GameObject sphere2)
+    {
+        // Create a connector between the selected spheres
+        LineRenderer line = new GameObject("Line").AddComponent<LineRenderer>();
+        line.transform.parent = lineContainer.transform;
+        line.material = material;
+
+        Connector connector = new Connector();
+        connector.p0 = sphere1;
+        connector.p1 = sphere2;
+
+        Particle particle1 = particles[spheres.IndexOf(sphere1)];
+        Particle particle2 = particles[spheres.IndexOf(sphere2)];
+        connector.point0 = particle1;
+        connector.point1 = particle2;
+        connector.point0.pos = sphere1.transform.position;
+        connector.point0.oldPos = sphere1.transform.position;
+
+        connectors.Add(connector);
+
+        connector.lineRender = line;
+    }
 
     private void HandleInput()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            isDragging = true;
-            dragStartPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            ClearRope();
-        }
-
-        if (isDragging && Input.GetMouseButton(0))
-        {
-            dragEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
-            // Update drag visualization
-            UpdateDragVisualization();
-        }
-
-        if (Input.GetMouseButtonUp(0))
-        {
-            ClearRope();
-            InitializeRope(dragStartPos, dragEndPos);
-            isDragging = false;
-        }
-
         // Handle mouse input
         Vector3 mousePos = Input.mousePosition;
         Vector3 mousePos_new = Camera.main.ScreenToWorldPoint(mousePos);
         mousePos_new.z = 0f;
+
+        if (isClothSimulation)
+        {
+            // Cloth simulation input handling
+            if (Input.GetMouseButtonDown(0))
+            {
+                isDragging = true;
+                dragStartPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                ClearSimulation();
+            }
+
+            if (isDragging && Input.GetMouseButton(0))
+            {
+                dragEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+                // Update drag visualization
+                UpdateDragVisualization();
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                ClearSimulation();
+                InitialiseCloth(dragStartPos, dragEndPos);
+                isDragging = false;
+            }
+        }
+        else
+        {
+            // Rope simulation input handling
+            if (Input.GetMouseButtonDown(0))
+            {
+                GameObject nearestPoint = GetNearestRopePoint(mousePos_new, 0.5f);
+                if (nearestPoint != null)
+                {
+                    // Left-clicked on a rope point, select it
+                    selectedSphere = nearestPoint;
+                }
+                else
+                {
+                    // Left-clicked on empty space, create a new rope point
+                    // Shift + left-click creates a pinned point
+                    CreateRopePoint(mousePos_new, Input.GetKey(KeyCode.LeftShift));
+                }
+            }
+
+            if (Input.GetMouseButton(0) && selectedSphere != null)
+            {
+                isDraggingConnection = true;
+                // To Do: Visualize the dragged connection 
+            }
+
+            if (Input.GetMouseButtonUp(0) && isDraggingConnection)
+            {
+                GameObject nearestSphere = GetNearestRopePoint(mousePos_new, 0.5f);
+                if (nearestSphere != null && nearestSphere != selectedSphere)
+                {
+                    // Left-clicked on another rope point, create connection
+                    CreateConnection(selectedSphere, nearestSphere);
+                }
+
+                isDraggingConnection = false;
+                selectedSphere = null;
+            }
+        }
+
+        // Handle disabling connectors
         if (Input.GetMouseButton(1))
         {
             for (int i = 0; i < connectors.Count; i++)
@@ -178,6 +372,7 @@ public class RopeDraw : MonoBehaviour
             }
         }
 
+        // pause and unpause simulation
         if (Input.GetKeyDown(KeyCode.Space))
         {
             simulating = !simulating;
@@ -213,7 +408,7 @@ public class RopeDraw : MonoBehaviour
         }
     }
 
-    private void ClearRope()
+    private void ClearSimulation()
     {
         foreach (GameObject sphere in spheres)
         {
@@ -262,8 +457,6 @@ public class RopeDraw : MonoBehaviour
     {
         // Constraint the points together
         float constraintLength = 0.5f;
-        float constraintMinModifier = 1f;
-        float constraintMaxModifier = 1.1f;
 
         for (int i = 0; i < connectors.Count; i++)
         {
@@ -289,7 +482,6 @@ public class RopeDraw : MonoBehaviour
                 Vector2 changeAmount = connectors[i].changeDir * error;
                 connectors[i].point0.pos -= changeAmount * 0.5f;
                 connectors[i].point1.pos += changeAmount * 0.5f;
-
             }
         }
     }
@@ -321,6 +513,7 @@ public class RopeDraw : MonoBehaviour
             }
         }
     }
+
 
     void Update()
     {
