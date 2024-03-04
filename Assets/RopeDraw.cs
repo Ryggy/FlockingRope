@@ -1,27 +1,30 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class RopeDraw : MonoBehaviour
 {
     private int rows = 8;
     private int columns = 8;
-    public float spacing = 0.5f;
-    public Material material;
-    public Material pinnedMaterial;
-    public Camera mainCamera;
+    [SerializeField] private float spacing = 0.5f;
+    [SerializeField] private GameObject pointPrefab;
+    [SerializeField] private GameObject pointPrefabNoCol;
+    [SerializeField] private Material material;
+    [SerializeField] private Material pinnedMaterial;
+    [SerializeField] private Camera mainCamera;
     private List<GameObject> spheres = new List<GameObject>();
     private List<Particle> particles = new List<Particle>();
     private List<Connector> connectors = new List<Connector>();
 
-    public GameObject sphereContainer;
-    public GameObject lineContainer;
+    [SerializeField] private GameObject sphereContainer;
+    [SerializeField] private GameObject lineContainer;
 
     private Vector2 startPos;
     private Vector2 endPos;
     private Vector2 dragStartPos;
     private Vector2 dragEndPos;
     private bool isDragging = false;
-    private GameObject dragVisualization; // Added for visualization
+    private GameObject dragVisualisation; // Added for visualization
 
     public GameObject selectedSphere = null;
     private bool isDraggingConnection = false;
@@ -44,12 +47,10 @@ public class RopeDraw : MonoBehaviour
         if (isClothSimulation)
         {
             InitialiseCloth(startPos, endPos);
-            mainCamera.orthographicSize = 15f;
         }
         else
         {
             //InitialiseRope(startPos, endPos);
-            mainCamera.orthographicSize = 5f;
         }
     }
 
@@ -73,9 +74,8 @@ public class RopeDraw : MonoBehaviour
             for (int x = 0; x <= columns; x++)
             {
                 // Create a sphere
-                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                GameObject sphere = Instantiate(pointPrefabNoCol, sphereContainer.transform);
                 var mat = sphere.GetComponent<Renderer>();
-                sphere.transform.parent = sphereContainer.transform;
                 mat.material = material;
                 sphere.transform.position = new Vector2(spawnParticlePos.x, spawnParticlePos.y);
                 sphere.transform.localScale = new Vector2(0.2f, 0.2f);
@@ -175,9 +175,8 @@ public class RopeDraw : MonoBehaviour
         for (int i = 0; i <= pointCount; i++)
         {
             // Create a sphere
-            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            GameObject sphere = Instantiate(pointPrefab, sphereContainer.transform);
             Renderer renderer = sphere.GetComponent<Renderer>();
-            sphere.transform.parent = sphereContainer.transform;
             renderer.material = material;
             sphere.transform.position = new Vector2(spawnPos.x, spawnPos.y);
             sphere.transform.localScale = new Vector2(0.2f, 0.2f);
@@ -230,9 +229,8 @@ public class RopeDraw : MonoBehaviour
     private void CreateRopePoint(Vector2 position, bool isPinned)
     {
         // Create a sphere
-        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        GameObject sphere = Instantiate(pointPrefab,sphereContainer.transform);
         Renderer renderer = sphere.GetComponent<Renderer>();
-        sphere.transform.parent = sphereContainer.transform;
         renderer.material = material;
         sphere.transform.position = position;
         sphere.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
@@ -267,9 +265,13 @@ public class RopeDraw : MonoBehaviour
     private void CreateConnection(GameObject sphere1, GameObject sphere2)
     {
         // Create a connector between the selected spheres
-        LineRenderer line = new GameObject("Line").AddComponent<LineRenderer>();
-        line.transform.parent = lineContainer.transform;
+        GameObject lineGo = new GameObject("Line");
+        lineGo.transform.parent = lineContainer.transform;
+
+        LineRenderer line = lineGo.AddComponent<LineRenderer>();
         line.material = material;
+        line.startWidth = 0.04f;
+        line.endWidth = 0.04f;
 
         Connector connector = new Connector();
         connector.p0 = sphere1;
@@ -284,7 +286,12 @@ public class RopeDraw : MonoBehaviour
 
         connectors.Add(connector);
 
-        connector.lineRender = line;
+        line.SetPosition(0, sphere1.transform.position + new Vector3(0, 0, 1));
+        line.SetPosition(1, sphere2.transform.position + new Vector3(0, 0, 1));
+
+        //connector.lineRender = line;
+        Debug.DrawLine(startPos, endPos);
+
     }
 
     private void HandleInput()
@@ -309,7 +316,7 @@ public class RopeDraw : MonoBehaviour
                 dragEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
                 // Update drag visualization
-                UpdateDragVisualization();
+                UpdateDragVisualisation();
             }
 
             if (Input.GetMouseButtonUp(0))
@@ -342,6 +349,7 @@ public class RopeDraw : MonoBehaviour
             {
                 isDraggingConnection = true;
                 // To Do: Visualize the dragged connection 
+                UpdateRopeVisualisation();
             }
 
             if (Input.GetMouseButtonUp(0) && isDraggingConnection)
@@ -355,6 +363,8 @@ public class RopeDraw : MonoBehaviour
 
                 isDraggingConnection = false;
                 selectedSphere = null;
+
+                Destroy(dragVisualisation);
             }
         }
 
@@ -379,11 +389,11 @@ public class RopeDraw : MonoBehaviour
         }
     }
 
-    private void UpdateDragVisualization()
+    private void UpdateDragVisualisation()
     {
         // Destroy previous visualization if it exists
-        if (dragVisualization != null)
-            Destroy(dragVisualization);
+        if (dragVisualisation != null)
+            Destroy(dragVisualisation);
 
         // Calculate width and height of dragged section
         float width = Mathf.Abs(dragEndPos.x - dragStartPos.x);
@@ -393,19 +403,43 @@ public class RopeDraw : MonoBehaviour
         Vector2 center = (dragStartPos + dragEndPos) / 2f;
 
         // Create square visualization
-        dragVisualization = new GameObject("DragVisualization");
-        dragVisualization.transform.position = new Vector3(center.x, center.y, 0f);
+        dragVisualisation = new GameObject("DragVisualization");
+        dragVisualisation.transform.position = new Vector3(center.x, center.y, 0f);
         for (float x = -width / 2f; x <= width / 2f; x += spacing)
         {
             for (float y = -height / 2f; y <= height / 2f; y += spacing)
             {
                 GameObject point = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                point.transform.parent = dragVisualization.transform;
+                point.transform.parent = dragVisualisation.transform;
                 point.transform.localPosition = new Vector3(x, y, 0f);
                 point.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
                 point.GetComponent<Renderer>().material.color = Color.white;
             }
         }
+    }
+
+    private void UpdateRopeVisualisation()
+    {
+        // Destroy previous visualization if it exists
+        if (dragVisualisation != null)
+            Destroy(dragVisualisation);
+
+        // Create a line renderer for the dragged connection
+        dragVisualisation = new GameObject("DragVisualization");
+        dragVisualisation.transform.parent = lineContainer.transform;
+
+        LineRenderer lineRenderer = dragVisualisation.AddComponent<LineRenderer>();
+        lineRenderer.material = material;
+        lineRenderer.startWidth = 0.04f;
+        lineRenderer.endWidth = 0.04f;
+
+        // Set the positions of the line renderer
+        Vector3 endPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        endPoint.z = 0f;
+        lineRenderer.SetPosition(0, selectedSphere.transform.position + new Vector3(0, 0, 1));
+        lineRenderer.SetPosition(1, endPoint + new Vector3(0, 0, 1));
+
+        Debug.DrawLine(selectedSphere.transform.position + new Vector3(0, 0, 1), endPoint + new Vector3(0, 0, 1));
     }
 
     private void ClearSimulation()
@@ -422,9 +456,9 @@ public class RopeDraw : MonoBehaviour
             Destroy(lineContainer.transform.GetChild(i).gameObject);
         }
 
-        if (dragVisualization != null)
+        if (dragVisualisation != null)
         {
-            Destroy(dragVisualization);
+            Destroy(dragVisualisation);
         }
 
         spheres.Clear();
@@ -456,34 +490,37 @@ public class RopeDraw : MonoBehaviour
     private void ConstraintPoints()
     {
         // Constraint the points together
-        float constraintLength = 0.5f;
-
-        for (int i = 0; i < connectors.Count; i++)
+        float constraintLength = 0.5f; 
+        float numOfIterations = 3f;
+        for (int j = 0; j < numOfIterations; j++)
         {
-            if (connectors[i].enabled == false)
+            for (int i = 0; i < connectors.Count; i++)
             {
-                // Do nothing
-            }
-
-            else
-            {
-                float dist = (connectors[i].point0.pos - connectors[i].point1.pos).magnitude;
-                float error = Mathf.Abs(dist - constraintLength);
-
-                if (dist > constraintLength)
+                if (connectors[i].enabled == false)
                 {
-                    connectors[i].changeDir = (connectors[i].point0.pos - connectors[i].point1.pos).normalized;
-                }
-                else if (dist < constraintLength)
-                {
-                    connectors[i].changeDir = (connectors[i].point1.pos - connectors[i].point0.pos).normalized;
+                    // Do nothing
                 }
 
-                Vector2 changeAmount = connectors[i].changeDir * error;
-                connectors[i].point0.pos -= changeAmount * 0.5f;
-                connectors[i].point1.pos += changeAmount * 0.5f;
+                else
+                {
+                    float dist = (connectors[i].point0.pos - connectors[i].point1.pos).magnitude;
+                    float error = Mathf.Abs(dist - constraintLength);
+
+                    if (dist > constraintLength)
+                    {
+                        connectors[i].changeDir = (connectors[i].point0.pos - connectors[i].point1.pos).normalized;
+                    }
+                    else if (dist < constraintLength)
+                    {
+                        connectors[i].changeDir = (connectors[i].point1.pos - connectors[i].point0.pos).normalized;
+                    }
+
+                    Vector2 changeAmount = connectors[i].changeDir * error;
+                    connectors[i].point0.pos -= changeAmount * 0.5f;
+                    connectors[i].point1.pos += changeAmount * 0.5f;
+                }
             }
-        }
+        } 
     }
 
     private void SetSpheresAndLines()
@@ -492,7 +529,7 @@ public class RopeDraw : MonoBehaviour
         {
             Particle point = particles[p];
             spheres[p].transform.position = new Vector2(point.pos.x, point.pos.y);
-            spheres[p].transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            //spheres[p].transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
         }
 
         for (int i = 0; i < connectors.Count; i++)
