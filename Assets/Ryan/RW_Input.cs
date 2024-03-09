@@ -1,16 +1,32 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class RW_Input : MonoBehaviour
 {
-    private Vector2 dragStartPos;
-    private Vector2 dragEndPos;
+    private RW_RopeManager ropeManager;
+    private RW_Visuals visuals;
+    public Vector2 dragStartPos;
+    public Vector2 dragEndPos;
     private bool isDragging = false;
-    private GameObject dragVisualisation; // Added for visualization
+    public GameObject dragVisualisation; // Added for visualization
 
     public GameObject selectedSphere = null;
     private bool isDraggingConnection = false;
+
+    private void Start()
+    {
+        if (ropeManager == null)
+        {
+            ropeManager = GetComponent<RW_RopeManager>();
+        }
+
+        if (visuals == null)
+        {
+            visuals = GetComponent <RW_Visuals> ();
+        }
+    }
 
     // Update is called once per frame
     void Update()
@@ -25,14 +41,20 @@ public class RW_Input : MonoBehaviour
         Vector3 mousePos_new = Camera.main.ScreenToWorldPoint(mousePos);
         mousePos_new.z = 0f;
 
-        if (isClothSimulation)
+        if (ropeManager.isClothSimulation)
         {
             // Cloth simulation input handling
             if (Input.GetMouseButtonDown(0))
             {
                 isDragging = true;
                 dragStartPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-                ClearSimulation();
+                ropeManager.ClearSimulation();
+                
+                // destroy drag visual
+                if (dragVisualisation != null)
+                {
+                    Destroy(dragVisualisation);
+                }
             }
 
             if (isDragging && Input.GetMouseButton(0))
@@ -40,13 +62,18 @@ public class RW_Input : MonoBehaviour
                 dragEndPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
                 // Update drag visualization
-                UpdateDragVisualisation();
+                visuals.UpdateDragVisualisation();
             }
 
             if (Input.GetMouseButtonUp(0))
             {
-                ClearSimulation();
-                InitialiseCloth(dragStartPos, dragEndPos);
+                ropeManager.ClearSimulation();
+                // destroy drag visual
+                if (dragVisualisation != null)
+                {
+                    Destroy(dragVisualisation);
+                }
+                ropeManager.InitialiseCloth(dragStartPos, dragEndPos);
                 isDragging = false;
             }
         }
@@ -65,7 +92,7 @@ public class RW_Input : MonoBehaviour
                 {
                     // Left-clicked on empty space, create a new rope point
                     // Shift + left-click creates a pinned point
-                    CreateRopePoint(mousePos_new, Input.GetKey(KeyCode.LeftShift));
+                    ropeManager.CreateRopePoint(mousePos_new, Input.GetKey(KeyCode.LeftShift));
                 }
             }
 
@@ -73,7 +100,7 @@ public class RW_Input : MonoBehaviour
             {
                 isDraggingConnection = true;
                 // To Do: Visualize the dragged connection 
-                UpdateRopeVisualisation();
+                visuals.UpdateRopeVisualisation();
             }
 
             if (Input.GetMouseButtonUp(0) && isDraggingConnection)
@@ -82,7 +109,7 @@ public class RW_Input : MonoBehaviour
                 if (nearestSphere != null && nearestSphere != selectedSphere)
                 {
                     // Left-clicked on another rope point, create connection
-                    CreateConnection(selectedSphere, nearestSphere);
+                    ropeManager.CreateConnection(selectedSphere, nearestSphere);
                 }
 
                 isDraggingConnection = false;
@@ -95,13 +122,13 @@ public class RW_Input : MonoBehaviour
         // Handle disabling connectors
         if (Input.GetMouseButton(1))
         {
-            for (int i = 0; i < connectors.Count; i++)
+            for (int i = 0; i < ropeManager.connectors.Count; i++)
             {
-                float dist = Vector3.Distance(mousePos_new, connectors[i].point0.pos);
+                float dist = Vector3.Distance(mousePos_new, ropeManager.connectors[i].point0.pos);
                 if (dist <= 1.05f)
                 {
                     //Debug.Log("removed connector");
-                    connectors[i].enabled = false;
+                    ropeManager.connectors[i].enabled = false;
                 }
             }
         }
@@ -109,7 +136,7 @@ public class RW_Input : MonoBehaviour
         // pause and unpause simulation
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            simulating = !simulating;
+            ropeManager.simulating = !ropeManager.simulating;
         }
     }
     
@@ -125,6 +152,4 @@ public class RW_Input : MonoBehaviour
         }
         return null;
     }
-    
-
 }

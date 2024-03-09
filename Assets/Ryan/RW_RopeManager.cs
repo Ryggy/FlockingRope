@@ -7,33 +7,34 @@ public class RW_RopeManager : MonoBehaviour
 {
     private int rows = 8;
     private int columns = 8;
-    [SerializeField] private float spacing = 0.5f;
+    public float spacing = 0.5f;
     [SerializeField] private GameObject pointPrefab;
     [SerializeField] private GameObject pointPrefabNoCol;
-    [SerializeField] private Material material;
-    [SerializeField] private Material pinnedMaterial;
+    [SerializeField] public Material material;
+    [SerializeField] public Material pinnedMaterial;
     [SerializeField] private Camera mainCamera;
-    private List<GameObject> spheres = new List<GameObject>();
-    private List<Particle> particles = new List<Particle>();
-    private List<Connector> connectors = new List<Connector>();
 
-    [SerializeField] private GameObject sphereContainer;
-    [SerializeField] private GameObject lineContainer;
+    [HideInInspector] public List<GameObject> spheres = new List<GameObject>();
+    [HideInInspector] public List<Particle> particles = new List<Particle>();
+    [HideInInspector] public List<Connector> connectors = new List<Connector>();
+
+    public GameObject sphereContainer;
+    public GameObject lineContainer;
 
     private Vector2 startPos;
     private Vector2 endPos;
-   
+
     public bool isClothSimulation = true; // Toggle between cloth and rope simulation
     public bool simulating = false;
-    
-    
+
+
     void Start()
     {
         startPos = new Vector2(0, 0);
         endPos = new Vector2(rows, -columns);
         InitialiseSimulation();
     }
-    
+
     private void FixedUpdate()
     {
         if (simulating)
@@ -43,7 +44,7 @@ public class RW_RopeManager : MonoBehaviour
             SetSpheresAndLines();
         }
     }
-    
+
     private void InitialiseSimulation()
     {
         ClearSimulation();
@@ -57,8 +58,8 @@ public class RW_RopeManager : MonoBehaviour
             InitialiseRope(startPos, endPos);
         }
     }
-    
-    private void InitialiseCloth(Vector2 start, Vector2 end)
+
+    public void InitialiseCloth(Vector2 start, Vector2 end)
     {
         // Implementation for cloth simulation (spawn a grid of connected points)
 
@@ -162,8 +163,8 @@ public class RW_RopeManager : MonoBehaviour
             }
         }
     }
-    
-     private void InitialiseRope(Vector2 start, Vector2 end)
+
+    public void InitialiseRope(Vector2 start, Vector2 end)
     {
         // Implementation for rope simulation (spawn a line of connected points)
 
@@ -229,8 +230,8 @@ public class RW_RopeManager : MonoBehaviour
             spawnPos += direction * spacing;
         }
     }
-    
-    private void ClearSimulation()
+
+    public void ClearSimulation()
     {
         foreach (GameObject sphere in spheres)
         {
@@ -243,18 +244,12 @@ public class RW_RopeManager : MonoBehaviour
         {
             Destroy(lineContainer.transform.GetChild(i).gameObject);
         }
-        
-        // destroy drag visual
-        // if (dragVisualisation != null)
-        // {
-        //     Destroy(dragVisualisation);
-        // }
 
         spheres.Clear();
         particles.Clear();
         connectors.Clear();
     }
-    
+
     private void UpdateParticlePositions()
     {
         for (int p = 0; p < particles.Count; p++)
@@ -275,11 +270,11 @@ public class RW_RopeManager : MonoBehaviour
             }
         }
     }
-    
+
     private void ConstraintPoints()
     {
         // Constraint the points together
-        float constraintLength = 0.5f; 
+        float constraintLength = 0.5f;
         float numOfIterations = 3f;
         for (int j = 0; j < numOfIterations; j++)
         {
@@ -309,9 +304,9 @@ public class RW_RopeManager : MonoBehaviour
                     connectors[i].point1.pos += changeAmount * 0.5f;
                 }
             }
-        } 
+        }
     }
-    
+
     private void SetSpheresAndLines()
     {
         for (int p = 0; p < particles.Count; p++)
@@ -339,11 +334,11 @@ public class RW_RopeManager : MonoBehaviour
             }
         }
     }
-    
-    private void CreateRopePoint(Vector2 position, bool isPinned)
+
+    public void CreateRopePoint(Vector2 position, bool isPinned)
     {
         // Create a sphere
-        GameObject sphere = Instantiate(pointPrefab,sphereContainer.transform);
+        GameObject sphere = Instantiate(pointPrefab, sphereContainer.transform);
         Renderer renderer = sphere.GetComponent<Renderer>();
         renderer.material = material;
         sphere.transform.position = position;
@@ -362,8 +357,8 @@ public class RW_RopeManager : MonoBehaviour
         spheres.Add(sphere);
         particles.Add(point);
     }
-    
-    private void CreateConnection(GameObject sphere1, GameObject sphere2)
+
+    public void CreateConnection(GameObject sphere1, GameObject sphere2)
     {
         // Create a connector between the selected spheres
         GameObject lineGo = new GameObject("Line");
@@ -393,6 +388,7 @@ public class RW_RopeManager : MonoBehaviour
         connector.lineRender = line;
         Debug.DrawLine(startPos, endPos);
     }
+
     public class Connector
     {
         public bool enabled = true;
@@ -415,5 +411,4 @@ public class RW_RopeManager : MonoBehaviour
         public float friction = 0.99f;
         public float damping = 1f;
     }
-    
 }

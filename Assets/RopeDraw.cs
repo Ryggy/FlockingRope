@@ -6,6 +6,7 @@ public class RopeDraw : MonoBehaviour
 {
     private int rows = 8;
     private int columns = 8;
+    [SerializeField] private int numNodes = 0;
     [SerializeField] private float spacing = 0.5f;
     [SerializeField] private GameObject pointPrefab;
     [SerializeField] private GameObject pointPrefabNoCol;
@@ -15,7 +16,7 @@ public class RopeDraw : MonoBehaviour
     private List<GameObject> spheres = new List<GameObject>();
     private List<Particle> particles = new List<Particle>();
     private List<Connector> connectors = new List<Connector>();
-
+   
     [SerializeField] private GameObject sphereContainer;
     [SerializeField] private GameObject lineContainer;
 
@@ -68,7 +69,7 @@ public class RopeDraw : MonoBehaviour
 
         rows = newRows;
         columns = newCols;
-
+        numNodes = rows * columns;
         for (int y = 0; y <= rows; y++)
         {
             for (int x = 0; x <= columns; x++)
@@ -240,7 +241,7 @@ public class RopeDraw : MonoBehaviour
         // Create particle
         Particle point = new Particle();
         point.pinnedPos = position;
-
+        point.visual = sphere;
         // Set pinned state
         point.pinned = isPinned;
         if (isPinned) renderer.material = pinnedMaterial;
@@ -526,12 +527,23 @@ public class RopeDraw : MonoBehaviour
 
     private void SetSpheresAndLines()
     {
+
+        if (particles.Count <= 0)
+        {
+            return;
+        }
+        
         for (int p = 0; p < particles.Count; p++)
         {
             Particle point = particles[p];
             point.visual.transform.position = new Vector2(point.pos.x, point.pos.y);
         }
 
+        if (connectors.Count <= 0)
+        {
+            return;
+        }
+        
         for (int i = 0; i < connectors.Count; i++)
         {
             if (connectors[i].enabled == false)
