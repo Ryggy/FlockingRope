@@ -392,7 +392,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1959460365}
-  - component: {fileID: 1959460364}
+  - component: {fileID: 1959460369}
   - component: {fileID: 1959460368}
   - component: {fileID: 1959460367}
   - component: {fileID: 1959460366}
@@ -403,30 +403,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1959460364
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1959460363}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4aa45ab5b34ce9c4b8c8e65e44c9e77c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  numNodes: 0
-  spacing: 0.5
-  pointPrefab: {fileID: 3741557156950346879, guid: 3370b32fc29bbdf4299d5eccd9dc6722, type: 3}
-  pointPrefabNoCol: {fileID: 3741557156950346879, guid: d304ea0525e1e2a428679c1fe80f4415, type: 3}
-  material: {fileID: 2100000, guid: 0f92e85c2f33a5b41bf7c429d95ea040, type: 2}
-  pinnedMaterial: {fileID: 2100000, guid: 609b0ddf4d86157419e2fa885988163e, type: 2}
-  mainCamera: {fileID: 519420031}
-  sphereContainer: {fileID: 97259545}
-  lineContainer: {fileID: 1954762530}
-  selectedSphere: {fileID: 0}
-  isClothSimulation: 1
-  simulating: 0
 --- !u!4 &1959460365
 Transform:
   m_ObjectHideFlags: 0
@@ -463,13 +439,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 1959460363}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c81c268d4cc15844996d15016941b2a4, type: 3}
+  m_Script: {fileID: 11500000, guid: 09d9c1405e0aedb4dab4c129de3b45bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dragStartPos: {x: 0, y: 0}
-  dragEndPos: {x: 10, y: 10}
-  dragVisualisation: {fileID: 0}
-  selectedSphere: {fileID: 0}
+  spacing: 0.5
+  pointPrefab: {fileID: 0}
+  pointPrefabNoCol: {fileID: 0}
+  material: {fileID: 0}
+  pinnedMaterial: {fileID: 0}
+  mainCamera: {fileID: 0}
+  spheres: []
+  sphereContainer: {fileID: 0}
+  lineContainer: {fileID: 0}
+  isClothSimulation: 1
+  simulating: 0
 --- !u!114 &1959460368
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -479,19 +462,36 @@ MonoBehaviour:
   m_GameObject: {fileID: 1959460363}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 09d9c1405e0aedb4dab4c129de3b45bf, type: 3}
+  m_Script: {fileID: 11500000, guid: c81c268d4cc15844996d15016941b2a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  dragStartPos: {x: 0, y: 0}
+  dragEndPos: {x: 0, y: 0}
+  dragVisualisation: {fileID: 0}
+  selectedSphere: {fileID: 0}
+--- !u!114 &1959460369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1959460363}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4aa45ab5b34ce9c4b8c8e65e44c9e77c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numNodes: 0
   spacing: 0.5
-  pointPrefab: {fileID: 3741557156950346879, guid: 3370b32fc29bbdf4299d5eccd9dc6722, type: 3}
-  pointPrefabNoCol: {fileID: 3741557156950346879, guid: d304ea0525e1e2a428679c1fe80f4415, type: 3}
-  material: {fileID: 2100000, guid: 0f92e85c2f33a5b41bf7c429d95ea040, type: 2}
-  pinnedMaterial: {fileID: 2100000, guid: 609b0ddf4d86157419e2fa885988163e, type: 2}
-  mainCamera: {fileID: 519420031}
-  spheres: []
-  sphereContainer: {fileID: 97259545}
-  lineContainer: {fileID: 1954762530}
-  isClothSimulation: 0
+  pointPrefab: {fileID: 0}
+  pointPrefabNoCol: {fileID: 0}
+  material: {fileID: 0}
+  pinnedMaterial: {fileID: 0}
+  mainCamera: {fileID: 0}
+  sphereContainer: {fileID: 0}
+  lineContainer: {fileID: 0}
+  selectedSphere: {fileID: 0}
+  isClothSimulation: 1
   simulating: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
