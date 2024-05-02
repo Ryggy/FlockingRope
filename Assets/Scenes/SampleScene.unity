@@ -483,13 +483,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   numNodes: 0
   spacing: 0.5
-  pointPrefab: {fileID: 0}
-  pointPrefabNoCol: {fileID: 0}
-  material: {fileID: 0}
+  pointPrefab: {fileID: 3741557156950346879, guid: 3370b32fc29bbdf4299d5eccd9dc6722, type: 3}
+  pointPrefabNoCol: {fileID: 3741557156950346879, guid: d304ea0525e1e2a428679c1fe80f4415, type: 3}
+  material: {fileID: 2100000, guid: 0f92e85c2f33a5b41bf7c429d95ea040, type: 2}
   pinnedMaterial: {fileID: 0}
   mainCamera: {fileID: 0}
-  sphereContainer: {fileID: 0}
-  lineContainer: {fileID: 0}
+  sphereContainer: {fileID: 97259545}
+  lineContainer: {fileID: 1954762530}
   selectedSphere: {fileID: 0}
   isClothSimulation: 1
   simulating: 0
