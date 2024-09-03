@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class RW_RopeManager : MonoBehaviour
@@ -45,6 +43,11 @@ public class RW_RopeManager : MonoBehaviour
         }
     }
 
+    public void SetIsClothSim(bool isClothSim)
+    {
+        isClothSimulation = isClothSim;
+    }
+    
     private void InitialiseSimulation()
     {
         ClearSimulation();

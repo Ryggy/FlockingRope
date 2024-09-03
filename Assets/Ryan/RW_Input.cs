@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class RW_Input : MonoBehaviour
 {
@@ -15,6 +16,8 @@ public class RW_Input : MonoBehaviour
     public GameObject selectedSphere = null;
     private bool isDraggingConnection = false;
 
+    public Image pausedImage;
+    
     private void Start()
     {
         if (ropeManager == null)
@@ -40,7 +43,7 @@ public class RW_Input : MonoBehaviour
         Vector3 mousePos = Input.mousePosition;
         Vector3 mousePos_new = Camera.main.ScreenToWorldPoint(mousePos);
         mousePos_new.z = 0f;
-
+        
         if (ropeManager.isClothSimulation)
         {
             // Cloth simulation input handling
@@ -80,7 +83,7 @@ public class RW_Input : MonoBehaviour
         else
         {
             // Rope simulation input handling
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) && !ropeManager.simulating)
             {
                 GameObject nearestPoint = GetNearestRopePoint(mousePos_new, 0.5f);
                 if (nearestPoint != null)
@@ -137,6 +140,7 @@ public class RW_Input : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             ropeManager.simulating = !ropeManager.simulating;
+            pausedImage.enabled = !ropeManager.simulating;
         }
     }
     
